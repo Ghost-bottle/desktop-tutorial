@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>INTJ/INFJ LifeOS Pro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: #050505;
+            background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2672&auto=format&fit=crop'); 
+            background-size: cover; background-position: center; background-attachment: fixed;
+            font-family: 'Noto Sans SC', 'Share Tech Mono', monospace;
+            min-height: 100vh;
+            color: #d4fce9;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(5,5,10,0.95) 0%, rgba(20,20,30,0.9) 100%);
+            z-index: 1;
+        }
+
+        .hud-wrapper {
+            position: relative; z-index: 2;
+            display: flex; gap: 20px;
+            width: 1000px; 
+            margin: 0 auto;
+            padding: 40px;
+            min-height: 100vh;
+            align-items: flex-start;
+        }
+
+        /* 侧边栏 */
+        .schedule-panel {
+            width: 240px;
+            background: rgba(10, 15, 12, 0.8);
+            border: 1px solid #334433;
+            padding: 20px;
+            border-radius: 4px;
+            backdrop-filter: blur(5px);
+            position: sticky; top: 20px;
+        }
+        .day-btn {
+            display: block; width: 100%;
+            padding: 12px 10px; margin-bottom: 8px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-left: 3px solid #444;
+            color: #666; cursor: pointer;
+            text-align: left; transition: 0.2s;
+            font-family: 'Noto Sans SC'; font-weight: bold; font-size: 0.9rem;
+        }
+        .day-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .day-btn.active {
+            background: rgba(51, 255, 153, 0.05);
+            border-left: 4px solid #33ff99;
+            color: #33ff99;
+        }
+
+        /* 主控区 */
+        .status-panel {
+            flex: 1;
+            background: rgba(10, 12, 15, 0.9);
+            border: 1px solid #445566;
+            border-radius: 4px;
+            padding: 30px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334433; padding-bottom: 15px; margin-bottom: 20px; }
+        .title { font-size: 1.8rem; color: #fff; font-weight: bold; letter-spacing: 2px; }
+        .mode-badge { border: 1px solid; padding: 4px 12px; font-size: 0.8rem; font-weight: bold; font-family: 'Share Tech Mono';}
+
+        /* 仪表盘 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .meter-box {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #333;
+            padding: 15px;
+        }
+
+        .meter-label { font-size: 0.75rem; color: #888; margin-bottom: 8px; display: flex; justify-content: space-between; font-family: 'Share Tech Mono'; }
+        .track { width: 100%; height: 10px; background: #111; border: 1px solid #444; border-radius: 2px; overflow: hidden; position: relative; }
+        
+        /* 增加条纹效果，增强科技感 */
+        .energy-fill { 
+            height: 100%; 
+            background: repeating-linear-gradient(45deg, #22aa66, #22aa66 10px, #33ff99 10px, #33ff99 20px);
+            box-shadow: 0 0 15px rgba(0, 255, 150, 0.2); 
+            transition: width 0.3s ease; 
+        }
+        .psyche-fill { 
+            height: 100%; 
+            background: repeating-linear-gradient(45deg, #7722aa, #7722aa 10px, #d866ff 10px, #d866ff 20px);
+            box-shadow: 0 0 15px rgba(180, 50, 255, 0.3); 
+            transition: width 0.3s ease; 
+        }
+
+        .control-btn {
+            margin-top: 12px; width: 100%;
+            background: rgba(255,255,255,0.03); border: 1px solid;
+            padding: 12px; cursor: pointer;
+            font-family: 'Noto Sans SC'; font-size: 0.85rem; font-weight: bold;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .control-btn:active { transform: scale(0.98); }
+        .btn-energy { border-color: #008f8f; color: #00ffff; }
+        .btn-psyche { border-color: #8f008f; color: #d866ff; }
+
+        .low-alert { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 rgba(255,0,0,0); } 50% { box-shadow: 0 0 15px rgba(255, 50, 50, 0.5); } 100% { box-shadow: 0 0 0 rgba(255,0,0,0); } }
+
+        /* 任务区 */
+        .section-label { font-size: 0.8rem; color: #666; margin-bottom: 8px; letter-spacing: 1px; font-family: 'Share Tech Mono'; }
+
+        .type1-container {
+            padding: 20px; margin-bottom: 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid; border-left-width: 5px;
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .status-stable { border-color: #224433; border-left-color: #33ff99; } .status-stable .skill-name { color: #33ff99; }
+        .status-warning { border-color: #554422; border-left-color: #ffcc00; } .status-warning .skill-name { color: #ffcc00; }
+        .status-critical { border-color: #552222; border-left-color: #ff3333; } .status-critical .skill-name { color: #ff3333; }
+        .status-done { border-color: #00ffff; border-left-color: #00ffff; background: rgba(0, 255, 255, 0.05); } .status-done .skill-name { color: #00ffff; }
+
+        .btn-group { display: flex; gap: 10px; }
+        .action-btn { border: 1px solid; padding: 10px 20px; cursor: pointer; font-family: 'Noto Sans SC'; font-weight: bold; font-size: 0.9rem; background: transparent; }
+        
+        .btn-stable { color: #33ff99; border-color: #33ff99; } 
+        .btn-warning { color: #ffcc00; border-color: #ffcc00; } 
+        .btn-critical { color: #ff3333; border-color: #ff3333; } 
+        .btn-done { color: #00ffff; border-color: #00ffff; }
+        .levelup-btn { border-color: #555; color: #777; }
+
+        .main-mission-box { background: rgba(255, 255, 255, 0.02); border: 1px solid #444; padding: 20px; border-left: 3px solid #aaa; }
+        .mission-type { color: #ddd; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+        .mission-target { color: #aaa; font-size: 0.95rem; }
+        .footer-logs { margin-top: 25px; font-size: 0.75rem; color: #555; border-top: 1px solid #222; padding-top: 15px; font-family: 'Share Tech Mono'; }
+
+        /* 手机适配 */
+        @media screen and (max-width: 768px) {
+            .hud-wrapper { width: 100%; flex-direction: column; padding: 15px; gap: 20px; }
+            .schedule-panel { width: 100%; position: relative; order: 2; }
+            .status-panel { width: 100%; order: 1; padding: 20px; }
+            .dashboard-grid { grid-template-columns: 1fr; gap: 15px; }
+            .type1-container { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .btn-group { width: 100%; }
+            .action-btn { flex: 1; }
+            .title { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+
+    <div class="hud-wrapper">
+        <div class="schedule-panel">
+            <div style="margin-bottom:15px; color:#d866ff; font-size:0.85rem; font-family:'Share Tech Mono'">>> CONTROL CENTER</div>
+            <button class="day-btn" onclick="renderDay(0)">周一 / 胸甲锻造</button>
+            <button class="day-btn" onclick="renderDay(1)">周二 / 敏捷突袭</button>
+            <button class="day-btn" onclick="renderDay(2)">周三 / 背部充能</button>
+            <button class="day-btn" onclick="renderDay(3)">周四 / 核心打击</button>
+            <button class="day-btn" onclick="renderDay(4)">周五 / 腿部引擎</button>
+            <button class="day-btn" onclick="renderDay(5)">周末 / 自由漫游</button>
+            <div style="margin-top: 20px; padding-top:15px; border-top:1px solid #333; text-align: center;">
+                 <button onclick="resetProgress()" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.75rem;">[ ⚠ 格式化系统 ]</button>
+            </div>
+        </div>
+
+        <div class="status-panel" id="main-panel">
+            <div class="header">
+                <div class="title" id="day-title">星期一</div>
+                <div class="mode-badge" id="system-status">SYNCING...</div>
+            </div>
+
+            <!-- 实时仪表盘 -->
+            <div class="dashboard-grid">
+                <!-- 动能 -->
+                <div class="meter-box">
+                    <div class="meter-label">
+                        <span>⚡ 身体机能 (BODY BATTERY)</span>
+                        <span id="energy-text">Checking...</span>
+                    </div>
+                    <div class="track">
+                        <div class="energy-fill" id="energy-fill" style="width: 100%;"></div>
+                    </div>
+                    <button class="control-btn btn-energy" onclick="boostStat('energy')">
+                        <span>🔋 小睡充能 (+15%)</span>
+                    </button>
+                </div>
+
+                <!-- 心神 -->
+                <div class="meter-box">
+                    <div class="meter-label">
+                        <span style="color:#d866ff">🔮 精神算力 (MENTAL RAM)</span>
+                        <span id="psyche-text" style="color:#d866ff">Checking...</span>
+                    </div>
+                    <div class="track">
+                        <div class="psyche-fill" id="psyche-fill" style="width: 100%;"></div>
+                    </div>
+                    <button class="control-btn btn-psyche" onclick="boostStat('psyche')">
+                        <span>🧘‍♂️ 冥想恢复 (+20%)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="section-label">今日任务 (Type 1) - <span id="time-display">00:00</span></div>
+            
+            <div class="type1-container" id="type1-box">
+                <div class="skill-info">
+                    <div class="skill-name" id="skill-name" style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">Loading...</div>
+                    <div class="skill-step" id="skill-step" style="color:#888; font-size:0.9rem;">...</div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="action-btn levelup-btn" onclick="levelUp()">▲ 难度升级</button>
+                    <button class="action-btn" id="finish-btn" onclick="toggleComplete()">提交任务</button>
+                </div>
+            </div>
+
+            <div class="section-label">主线副本 (Type 2/3)</div>
+            <div class="main-mission-box">
+                <div class="mission-type" id="mission-type">⚔️ ...</div>
+                <div class="mission-target" id="mission-target">...</div>
+            </div>
+
+            <div class="footer-logs" id="log-text">
+                SYSTEM LOG: 生物钟同步完成。实时监控已开启。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 核心配置 ---
+        const DAY_START = 7; // 早上7点开始掉电
+        const DAY_END = 23;  // 晚上11点完全没电
+        const TOTAL_MINUTES = (DAY_END - DAY_START) * 60; // 总清醒时间（分钟）
+
+        // --- 基础数据 ---
+        const convictSteps = {
+            pushups: ["一式: 墙壁俯卧撑", "二式: 上斜俯卧撑", "三式: 膝盖俯卧撑", "四式: 半俯卧撑", "五式: 标准俯卧撑", "六式: 窄距俯卧撑", "七式: 偏重俯卧撑", "八式: 单臂半俯卧撑", "九式: 杠杆俯卧撑", "十式: 单臂俯卧撑"],
+            squats: ["一式: 肩倒立深蹲", "二式: 折刀深蹲", "三式: 支撑深蹲", "四式: 半深蹲", "五式: 标准深蹲", "六式: 窄距深蹲", "七式: 偏重深蹲", "八式: 单腿半深蹲", "九式: 辅助单腿深蹲", "十式: 单腿深蹲"],
+            pullups: ["一式: 垂直引体", "二式: 水平引体", "三式: 折刀引体", "四式: 半引体", "五式: 标准引体", "六式: 窄距引体", "七式: 偏重引体", "八式: 单臂半引体", "九式: 辅助单臂引体", "十式: 单臂引体"],
+            legraises: ["一式: 坐姿屈膝", "二式: 平卧抬膝", "三式: 平卧屈举腿", "四式: 平卧蛙举腿", "五式: 平卧直举腿", "六式: 悬垂屈膝", "七式: 悬垂屈举腿", "八式: 悬垂蛙举腿", "九式: 悬垂半举腿", "十式: 悬垂举腿"],
+            bridges: ["一式: 短桥", "二式: 直桥", "三式: 高低桥", "四式: 顶桥", "五式: 半桥", "六式: 标准桥", "七式: 下行桥", "八式: 上行桥", "九式: 闭合桥", "十式: 站立桥"],
+            hspu: ["一式: 靠墙顶立", "二式: 乌鸦式", "三式: 靠墙倒立", "四式: 半倒立撑", "五式: 倒立撑", "六式: 窄距倒立撑", "七式: 偏重倒立撑", "八式: 单臂半倒立撑", "九式: 杠杆倒立撑", "十式: 单臂倒立撑"]
+        };
+
+        const schedule = [
+            { day: "📅 星期一 / MON", skillKey: "pushups", skillName: "推力系 (俯卧撑)", type: "🛡️ 力量训练", target: "胸部 & 三头肌" },
+            { day: "⚡ 星期二 / TUE", skillKey: "legraises", skillName: "核心系 (举腿)", type: "🔥 高强度徒手", target: "核心 & 爆发力" },
+            { day: "📅 星期三 / WED", skillKey: "pullups", skillName: "拉力系 (引体)", type: "🛡️ 力量训练", target: "背部 & 二头肌" },
+            { day: "⚡ 星期四 / THU", skillKey: "squats", skillName: "下肢系 (深蹲)", type: "🔥 高强度徒手", target: "腿部 & 纵跳" },
+            { day: "📅 星期五 / FRI", skillKey: "hspu", skillName: "肩部系 (倒立)", type: "🛡️ 力量训练", target: "肩部推举 & 腿部" },
+            { day: "🛌 周末 / WEEKEND", skillKey: "bridges", skillName: "脊柱系 (桥)", type: "🍃 自由探索", target: "休息 / 户外活动" }
+        ];
+
+        let userProgress = JSON.parse(localStorage.getItem('fitnessProgress')) || {
+            pushups: 0, squats: 0, pullups: 0, legraises: 0, bridges: 0, hspu: 0
+        };
+
+        // --- 核心逻辑：生物钟实时计算 (Circadian Algorithm) ---
+        function getBoosts() {
+            // 获取当天的额外充能记录，如果不是今天则清空
+            const todayStr = new Date().toDateString();
+            let data = JSON.parse(localStorage.getItem('dailyBoosts'));
+            if (!data || data.date !== todayStr) {
+                return { energy: 0, psyche: 0, date: todayStr };
+            }
+            return data;
+        }
+
+        function saveBoost(type, amount) {
+            let data = getBoosts();
+            data[type] += amount;
+            localStorage.setItem('dailyBoosts', JSON.stringify(data));
+            updateMeters();
+        }
+
+        function calculateRealTimePercentage(isPsyche = false) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMin = now.getMinutes();
+
+            // 如果在 0点到7点之间，强制为 100%（睡眠恢复期）
+            if (currentHour < DAY_START) return 100;
+
+            // 计算从早上7点到现在过了多少分钟
+            const minutesPassed = ((currentHour - DAY_START) * 60) + currentMin;
+            
+            // 基础自然衰减 (Natural Decay)
+            // 动能是线性衰减，心神衰减稍微快一点(1.1倍)
+            let decayFactor = isPsyche ? 1.1 : 1.0; 
+            let percentUsed = (minutesPassed / TOTAL_MINUTES) * 100 * decayFactor;
+            
+            let basePercent = 100 - percentUsed;
+            
+            // 加上额外充能
+            const boosts = getBoosts();
+            let finalPercent = basePercent + (isPsyche ? boosts.psyche : boosts.energy);
+
+            // 限制范围 0 - 100
+            if (finalPercent > 100) finalPercent = 100;
+            if (finalPercent < 0) finalPercent = 0;
+
+            return finalPercent;
+        }
+
+        function updateMeters() {
+            // 1. 动能
+            const energyVal = calculateRealTimePercentage(false);
+            const energyFill = document.getElementById('energy-fill');
+            energyFill.style.width = energyVal + "%";
+            // 保留一位小数，产生跳动感
+            document.getElementById('energy-text').innerText = energyVal.toFixed(1) + "%";
+            
+            if (energyVal < 20) energyFill.classList.add('low-alert');
+            else energyFill.classList.remove('low-alert');
+
+            // 2. 心神
+            const psycheVal = calculateRealTimePercentage(true);
+            const psycheFill = document.getElementById('psyche-fill');
+            psycheFill.style.width = psycheVal + "%";
+            document.getElementById('psyche-text').innerText = psycheVal.toFixed(1) + "%";
+
+            // 状态文字反馈
+            const log = document.getElementById('log-text');
+            if (psycheVal < 10) log.innerHTML = "⚠ 警告：精神力严重不足，系统即将强制休眠。";
+            else if (energyVal < 10) log.innerHTML = "⚠ 警告：体能耗尽。建议立即摄入碳水并休息。";
+        }
+
+        function boostStat(type) {
+            // 充能按钮逻辑
+            if(type === 'energy') {
+                if(confirm(">>> 记录：30分钟小睡/进食？\n>>> 效果：动能 +15%")) {
+                    saveBoost('energy', 15);
+                    alert("机体能量已补充。");
+                }
+            } else {
+                if(confirm(">>> 记录：深度冥想/阅读？\n>>> 效果：心神 +20%")) {
+                    saveBoost('psyche', 20);
+                    alert("精神缓存已清理。");
+                }
+            }
+        }
+
+        // --- 任务与UI逻辑 ---
+        function updateTimeAndStatus() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minutes = now.getMinutes();
+            const todayStr = now.toDateString();
+            
+            document.getElementById('time-display').innerText = 
+                `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+            const savedStatus = JSON.parse(localStorage.getItem('dailyQuestStatus'));
+            const isCompleted = savedStatus && savedStatus.date === todayStr && savedStatus.completed;
+
+            const box = document.getElementById('type1-box');
+            const badge = document.getElementById('system-status');
+            const btn = document.getElementById('finish-btn');
+            const panel = document.getElementById('main-panel');
+
+            box.classList.remove('status-stable', 'status-warning', 'status-critical', 'status-done');
+            btn.classList.remove('btn-stable', 'btn-warning', 'btn-critical', 'btn-done');
+            panel.style.borderColor = "";
+
+            if (isCompleted) {
+                box.classList.add('status-done'); btn.classList.add('btn-done');
+                btn.innerText = "今日任务完成 [ ✔ ]";
+                badge.innerText = "SYSTEM: OPTIMAL"; badge.style.color = "#00ffff"; badge.style.borderColor = "#00ffff";
+            } else {
+                btn.innerText = "提交任务";
+                if (hour < 12) {
+                    box.classList.add('status-stable'); btn.classList.add('btn-stable');
+                    badge.innerText = "SYSTEM: STABLE"; badge.style.color = "#33ff99"; badge.style.borderColor = "#33ff99";
+                } else if (hour >= 12 && hour < 18) {
+                    box.classList.add('status-warning'); btn.classList.add('btn-warning');
+                    badge.innerText = "SYSTEM: FATIGUE"; badge.style.color = "#ffcc00"; badge.style.borderColor = "#ffcc00";
+                    panel.style.borderColor = "#aa8800";
+                } else {
+                    box.classList.add('status-critical'); btn.classList.add('btn-critical');
+                    badge.innerText = "SYSTEM: CRITICAL"; badge.style.color = "#ff3333"; badge.style.borderColor = "#ff3333";
+                    panel.style.borderColor = "#882222"; 
+                }
+            }
+        }
+
+        let currentDayIndex = 0;
+        
+        function toggleComplete() {
+            const box = document.getElementById('type1-box');
+            if (box.classList.contains('status-done')) return;
+            const todayStr = new Date().toDateString();
+            localStorage.setItem('dailyQuestStatus', JSON.stringify({ date: todayStr, completed: true }));
+            updateTimeAndStatus();
+            alert(">>> 任务完成。经验值已记录。");
+        }
+
+        function renderDay(index) {
+            currentDayIndex = index;
+            const data = schedule[index];
+            document.querySelectorAll('.day-btn').forEach((btn, i) => btn.classList.toggle('active', i === index));
+            document.getElementById('day-title').innerText = data.day;
+            document.getElementById('mission-type').innerText = data.type;
+            document.getElementById('mission-target').innerText = data.target;
+            const currentLevel = userProgress[data.skillKey];
+            const skillText = convictSteps[data.skillKey][currentLevel] || "MAX LEVEL";
+            document.getElementById('skill-name').innerText = data.skillName;
+            document.getElementById('skill-step').innerText = `>>> 当前进度: ${skillText}`;
+            updateTimeAndStatus();
+            if(window.innerWidth < 768) { document.querySelector('.status-panel').scrollTop = 0; }
+        }
+
+        function levelUp() {
+            const currentSkillKey = schedule[currentDayIndex].skillKey;
+            if (userProgress[currentSkillKey] < 9) {
+                userProgress[currentSkillKey]++;
+                localStorage.setItem('fitnessProgress', JSON.stringify(userProgress));
+                renderDay(currentDayIndex);
+            } else { alert("已达到人类极限！"); }
+        }
+
+        function resetProgress() {
+            if(confirm("⚠ DANGER: 确认重置所有数据？")) { localStorage.clear(); location.reload(); }
+        }
+
+        // 初始化
+        const today = new Date().getDay(); 
+        let initIndex = (today === 0) ? 5 : today - 1; 
+        if (initIndex < 0) initIndex = 0; 
+        renderDay(initIndex);
+        
+        // 启动实时时钟
+        updateMeters(); // 立即执行一次
+        setInterval(() => {
+            updateTimeAndStatus();
+            updateMeters(); // 每秒更新，确保看着它在掉电/跳动
+        }, 1000); 
+
+    </script>
+</body>
+</html>
